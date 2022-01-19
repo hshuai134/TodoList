@@ -1,12 +1,12 @@
 import React, { Component } from 'react'
-import {Form, Input,Button} from 'antd'
+import {Form, Input, Button} from 'antd'
 import "./index.less"
 import moment from "moment"
 import {nanoid} from "nanoid";
 
 export default class index extends Component {
     state = {
-        id:"",
+        id:this.props.todoTemp.id,
         name:"",
         content:"",
         deadline:"",
@@ -37,23 +37,26 @@ export default class index extends Component {
         }else{
             this.setState({turnoverTime:moment().format("YYYY-MM-DD HH:mm:ss")});
             this.setState({id:nanoid()});
-            this.props.addTodo(this.state);
+            this.props.updateTodo(this.state);
         }
         // this.closeWindow()
     }
+    
     render() {
+        const {name,content,deadline} = this.props.todoTemp
+        console.log(name,content,deadline);
         return (
             <div className= "addTodo" style = {{display:this.props.show?"none":"block"}}>
                 <div className = "header">
-                    <span className="title" >新建待办</span>
+                    <span className="title" >编辑待办</span>
                     <span onClick={this.closeWindow} className="close">X</span>
                 </div>
                 <Form onFinish = {this.onFinish} className = "addTodoFrom">
                     <Form.Item label="名称" rules={[{ required: true }]}>
-                        <Input onChange={this.getitemName} defaultValue = "" ></Input>
+                        <Input onChange={this.getitemName} defaultValue={name} ></Input>
                     </Form.Item>
                     <Form.Item label="内容" rules={[{ required: true }]}>
-                        <Input onChange={this.getContent} defaultValue = "" ></Input>
+                        <Input onChange={this.getContent} defaultValue={content} ></Input>
                     </Form.Item>
                     <Form.Item label="截止时间">
                         <input type="date" placeholder="选择时间" onChange={this.getdeadline}></input>
