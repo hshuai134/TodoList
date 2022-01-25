@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import moment from "moment"
-import {Table,Modal,Button,Space,Form, Input,DatePicker} from 'antd';
+import "./App.less";
+import {Table,Modal,Button,Space,Form,Input,DatePicker,message} from 'antd';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
 import {nanoid} from "nanoid";
 const { Search } = Input;
@@ -51,13 +52,19 @@ export default class App extends Component {
     isEditModalVisible:false,
     showItems:null
   }
+  openWindow = (type,values) => {
+    if(values){
+      console.log("我是添加");
+    }else{
+      console.log("我是编辑");
+    }
+  }
   //打开添加窗口
   openAddWindow = () => {
     this.setState({isAddModalVisible:true})
   }
   //打开编辑窗口
   openEditWindow = (value) => {
-    // console.log(value);
     this.setState({temp: this.formatFormValues(value),isOpenEdit:true})
     this.setState({isEditModalVisible:true})
   }
@@ -77,25 +84,43 @@ export default class App extends Component {
   //添加待办
   addTodo = async () => {
     const values = await this.formRef.current.validateFields();
-    // const TempDeadline = moment(values.deadline).format("YYYY-MM-DD HH:mm:ss")
-    // const {name,content,deadline} = values;
-    const newTodo = {id:nanoid(),name:values.name,content:values.content,deadline:moment(values.deadline).format("YYYY-MM-DD HH:mm:ss"),turnoverTime:moment().format("YYYY-MM-DD HH:mm:ss")}
-    this.setState({items:[...this.state.items,newTodo]})
-    // console.log(this.state.items);
-    this.setState({isAddModalVisible:false})
+    const hide = message.loading("正在加载...")
+      //模拟数据加载
+    setTimeout(()=>{
+      hide();
+      const newTodo = {
+        id:nanoid(),
+        name:values.name,
+        content:values.content,
+        deadline:moment(values.deadline).format("YYYY-MM-DD HH:mm:ss"),
+        turnoverTime:moment().format("YYYY-MM-DD HH:mm:ss")
+      }
+      console.log(newTodo);
+      this.setState({items:[...this.state.items,newTodo]})
+      this.setState({isAddModalVisible:false})
+    },2000);
+    
   }
   //编辑待办
   updateTodo = async () => {
     const values = await this.formRef.current.validateFields();
     const todo = this.state.items
-    const newTodo = {id:this.state.temp.id,name:values.name,content:values.content,deadline:moment(values.deadline).format("YYYY-MM-DD HH:mm:ss"),turnoverTime:moment().format("YYYY-MM-DD HH:mm:ss")}
-    console.log("获取到：",values);
-    console.log("修改后的：",newTodo);
-    const newItems =todo.map((val,i,arr) => {
-      return val.id === newTodo.id ? arr[i] = newTodo: val
-    })
-    this.setState({items:newItems})
-    this.closeEditWindow();
+    const newTodo = {id:this.state.temp.id,
+      name:values.name,
+      content:values.content,
+      deadline:moment(values.deadline).format("YYYY-MM-DD HH:mm:ss"),
+      turnoverTime:moment().format("YYYY-MM-DD HH:mm:ss")
+    }
+    const hide = message.loading("正在加载...")
+    //模拟数据加载
+    setTimeout(()=>{
+      hide();
+      const newItems =todo.map((val,i,arr) => {
+        return val.id === newTodo.id ? arr[i] = newTodo: val
+      })
+      this.setState({items:newItems})
+      this.closeEditWindow();
+    },2000)
   }
   //删除提示框
   delConfirm = (id) => {
@@ -106,7 +131,11 @@ export default class App extends Component {
       okText: '确认',
       cancelText: '取消',
       onOk:()=>{
-       this.deleteTodo(id)
+        const hide = message.loading("正在加载...")
+        setTimeout(()=>{
+          hide();
+          this.deleteTodo(id);
+       },2000)
       },
       onCancel() {
         console.log("取消");
@@ -130,7 +159,11 @@ export default class App extends Component {
       okText: '确认',
       cancelText: '取消',
       onOk:()=>{
-       this.deleteTodos(ids)
+        const hide = message.loading("正在加载...")
+        setTimeout(()=>{
+          hide();
+          this.deleteTodos(ids)
+       },2000)
       },
       onCancel() {
         console.log("取消");
@@ -188,17 +221,17 @@ export default class App extends Component {
     window.localStorage.setItem("itmes",tempItems)
   }
 
+
+
   render() {
     
     const {items,columns,isAddModalVisible,isEditModalVisible,temp,isOpenEdit,showItems} = this.state
     return (
-      <div style = {{width:"800px",border:"1px blue solid"}}>
-        <Space size = "large">
-          <Space>
-            <Button  type="primary" onClick={this.openAddWindow}>添加代办</Button>
+      <div style = {{width:"800px"}}>
+        <Space size = "small">
+            <Button  type="primary" onClick={this.openAddWindow}>添加待办</Button>
             <Button onClick={this.delAllconfirm} >批量删除</Button>
-          </Space>
-          <Search size = "middle" onChange = {this.keywordChange} placeholder="input search text" onSearch={this.searchTodo} enterButton />
+            <Search className="search_header" size = "middle" onChange = {this.keywordChange} placeholder="input search text" onSearch={this.searchTodo} enterButton />
         </Space>
          <Table rowSelection={this.rowSelection} columns={columns} dataSource={showItems?showItems:items} rowKey={items => items.id}>
          </Table>
