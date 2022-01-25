@@ -55,57 +55,68 @@ export default class App extends Component {
   //打开操作窗口
   openWindow = (values) => {
     if(values.id === undefined){
-      console.log("执行添加");
+      console.log("添加操作");
       this.setState({isModalVisible:true,isLoadWindow:true})
     }else{
-      console.log("执行编辑");
+      console.log("编辑操作");
       this.setState({temp: this.formatFormValues(values),isLoadWindow:true})
       this.setState({isModalVisible:true})
     }
   }
-  //添加和编辑操作
-  addOrEditTodo = async () => {
-    if(this.state.temp === null){
-      console.log("添加新待办");
-      const values = await this.formRef.current.validateFields();
-      const hide = message.loading("正在加载...")
-      //模拟数据加载
-      setTimeout(()=>{
-        hide();
-        const newTodo = {
-          id:nanoid(),
-          name:values.name,
-          content:values.content,
-          deadline:moment(values.deadline).format("YYYY-MM-DD HH:mm:ss"),
-          turnoverTime:moment().format("YYYY-MM-DD HH:mm:ss")
+  //添加和编辑操作  添加节流 避免重复提交
+  addOrEditTodo = () => {
+    let canRun = true
+    return async () => {
+      if(canRun){
+        canRun = false;
+        console.log("调用了一次");
+        if(this.state.temp === null){
+          console.log("添加新待办");
+          const values = await this.formRef.current.validateFields();
+          console.log(values);
+          const hide = message.loading("正在加载...")
+          //模拟数据加载
+          setTimeout(()=>{
+            hide();
+            const newTodo = {
+              id:nanoid(),
+              name:values.name,
+              content:values.content,
+              deadline:moment(values.deadline).format("YYYY-MM-DD HH:mm:ss"),
+              turnoverTime:moment().format("YYYY-MM-DD HH:mm:ss")
+            }
+              console.log(newTodo);
+              this.formRef.current.resetFields();
+              this.setState({items:[...this.state.items,newTodo]})
+              this.setState({isModalVisible:false});
+              this.updateToLocalStorage();
+          },2000);
+        }else{
+          console.log("编辑待办");
+          const values = await this.formRef.current.validateFields();
+          const todo = this.state.items
+          const newTodo = {id:this.state.temp.id,
+            name:values.name,
+            content:values.content,
+            deadline:moment(values.deadline).format("YYYY-MM-DD HH:mm:ss"),
+            turnoverTime:moment().format("YYYY-MM-DD HH:mm:ss")
+          }
+          const hide = message.loading("正在加载...")
+          //模拟数据加载
+          setTimeout(()=>{
+            hide();
+            const newItems =todo.map((val,i,arr) => {
+              return val.id === newTodo.id ? arr[i] = newTodo: val
+            })
+            this.setState({items:newItems})
+            this.closeWindow();
+            this.updateToLocalStorage();
+            canRun = true;
+          },2000)
         }
-          console.log(newTodo);
-          this.setState({items:[...this.state.items,newTodo]})
-          this.setState({isModalVisible:false});
-          this.updateToLocalStorage();
-      },2000);
-    }else{
-      console.log("编辑待办");
-      const values = await this.formRef.current.validateFields();
-      const todo = this.state.items
-      const newTodo = {id:this.state.temp.id,
-        name:values.name,
-        content:values.content,
-        deadline:moment(values.deadline).format("YYYY-MM-DD HH:mm:ss"),
-        turnoverTime:moment().format("YYYY-MM-DD HH:mm:ss")
       }
-      const hide = message.loading("正在加载...")
-      //模拟数据加载
-      setTimeout(()=>{
-        hide();
-        const newItems =todo.map((val,i,arr) => {
-          return val.id === newTodo.id ? arr[i] = newTodo: val
-        })
-        this.setState({items:newItems})
-        this.closeWindow();
-        this.updateToLocalStorage();
-      },2000)
     }
+    
   }
   //关闭操作窗口
   closeWindow = () => {
@@ -176,14 +187,22 @@ export default class App extends Component {
     console.log(NewShowItems);
     this.setState({showItems:NewShowItems})
   }
-  //边输入边搜索
+  //边输入边搜索 添加 防抖 减少查询次数
   keywordChange = (e) => {
-    if(e.target.value.trim() !== ''){
-      this.search(e.target.value.trim())
-    }else{
-      this.setState({showItems:null})
-    }
-    console.log(e.target.value);
+    let timer = null;
+    return (e)=> { 
+      if(timer){
+        clearTimeout(timer);
+        timer = null;
+      }
+      timer = setTimeout(()=>{
+        if(e.target.value.trim() !== ''){
+          this.search(e.target.value.trim())
+        }else{
+          this.setState({showItems:null})
+        }
+      },1000)
+     }
   }
   //更新数据到localStorage
   updateToLocalStorage = () => {
@@ -214,11 +233,11 @@ export default class App extends Component {
     
     const {items,columns,isModalVisible,temp,isLoadWindow,showItems} = this.state
     return (
-      <div style = {{width:"800px",border:"1px blue solid"}}>
+      <div style = {{width:"800px"}}>
         <Space size = "small">
             <Button  type="primary" onClick={this.openWindow}>添加待办</Button>
             <Button onClick={this.delAllconfirm} >批量删除</Button>
-            <Search className="search_header" size = "middle" onChange = {this.keywordChange} placeholder="input search text" onSearch={this.search} enterButton />
+            <Search className="search_header" size = "middle" onChange = {this.keywordChange()} placeholder="input search text" onSearch={this.search} enterButton />
         </Space>
          <Table rowSelection={this.rowSelection} columns={columns} dataSource={showItems?showItems:items} rowKey={items => items.id}>
          </Table>
