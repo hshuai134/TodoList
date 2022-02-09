@@ -1,5 +1,7 @@
 import React, { Component } from 'react'
 import moment from "moment"
+import _ from 'lodash';
+
 import "./App.less";
 import {Table,Modal,Button,Space,Input,message} from 'antd';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
@@ -54,12 +56,13 @@ export default class App extends Component {
   }
   //打开操作窗口
   openWindow = (values) => {
-    if(values.id === undefined){
+    const _values = _.cloneDeep(values);
+    if(_values.id === undefined){
       console.log("添加操作");
       this.setState({isModalVisible:true,isLoadWindow:true})
     }else{
       console.log("编辑操作");
-      this.setState({temp: this.formatFormValues(values),isLoadWindow:true})
+      this.setState({temp: this.formatFormValues(_values),isLoadWindow:true})
       this.setState({isModalVisible:true})
     }
   }
@@ -225,7 +228,7 @@ export default class App extends Component {
   }
   componentDidMount(){
     //从localStorage中取出
-    var tempItems =JSON.parse(window.localStorage.getItem("itmes"));
+    var tempItems =JSON.parse(window.localStorage.getItem("itmes")) || [];
     this.setState({items:tempItems})
   }
 
@@ -243,7 +246,7 @@ export default class App extends Component {
          </Table>
 
         {!isLoadWindow ? null : 
-        <AddOrEidtTodo todoAction={{temp,isModalVisible,addOrEditTodo:this.addOrEditTodo,closeWindow:this.closeWindow,formRef:this.formRef}} />
+          <AddOrEidtTodo todoAction={{temp,isModalVisible,addOrEditTodo:this.addOrEditTodo,closeWindow:this.closeWindow,formRef:this.formRef}} />
         }
       </div>
     )
